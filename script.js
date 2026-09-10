@@ -22,7 +22,7 @@ function getAutoLocation () {
         nameCity.textContent = "Определение названия...";
 
         try {
-            const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&accept-language=ru&lat=${lat}&lon=${lon}`);
+            const response = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=5&lang=ru`);
             const data = await response.json();
 
             if (data && data.address) {
@@ -63,7 +63,7 @@ inputCity.addEventListener('input', (e) => {
 
     searchTimer = setTimeout(async () => {
         try {
-            const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&accept-language=ru&limit=5&addressdetails=1`);
+            const response = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=5&lang=ru`);
             const data = await response.json();
 
             cityList.innerHTML = '';
