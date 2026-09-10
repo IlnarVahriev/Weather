@@ -17,7 +17,7 @@ closeBtn.addEventListener('click', function() {
 
 autoGeoBtn.addEventListener('click', function() {
     if (!navigator.geolocation) {
-        alert('Геолокация не поддерживается вашим браузером');
+        alert('Геолокация не поддерживается');
         return;
     }
 
@@ -31,7 +31,7 @@ autoGeoBtn.addEventListener('click', function() {
         getWeather(lat, lon);
     }, function(err) {
         console.log(err);
-        alert('Не удалось получить координаты');
+        alert('Не удалось определить координаты');
     });
 });
 
@@ -48,7 +48,7 @@ inputCity.addEventListener('input', function() {
 
     timer = setTimeout(async function() {
         try {
-            let res = await fetch('https://geocoding-api.open-meteo.com/v1/search?name=' + text + '&count=5&language=ru&format=json');
+            let res = await fetch('https://geocoding-api.open-meteo.com/v1/search?name=' + encodeURIComponent(text) + '&count=15&language=ru&format=json');
             let data = await res.json();
 
             cityList.innerHTML = '';
@@ -60,12 +60,15 @@ inputCity.addEventListener('input', function() {
                     let country = item.country || '';
                     let region = item.admin1 || '';
 
-                    let extraText = country;
+                    let extraText = '';
                     if (region != '' && region != cityName) {
-                        if (country != '') {
-                            extraText = region + ', ' + country;
+                        extraText = region;
+                    }
+                    if (country != '') {
+                        if (extraText != '') {
+                            extraText = extraText + ', ' + country;
                         } else {
-                            extraText = region;
+                            extraText = country;
                         }
                     }
 
@@ -82,7 +85,7 @@ inputCity.addEventListener('input', function() {
 
                     li.querySelector('button').addEventListener('click', function() {
                         nameCity.textContent = cityName;
-                        countryName.textContent = country;
+                        countryName.textContent = extraText;
 
                         getWeather(item.latitude, item.longitude);
 
@@ -104,7 +107,6 @@ async function getWeather(lat, lon) {
     try {
         let res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=' + lat + '&longitude=' + lon + '&current=temperature_2m,apparent_temperature,weather_code&hourly=temperature_2m,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min,wind_speed_10m_max&timezone=auto');
         let data = await res.json();
-        console.log(data);
 
         if (data.current) {
             let temp = Math.round(data.current.temperature_2m);
