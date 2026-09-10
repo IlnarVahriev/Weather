@@ -5,7 +5,7 @@ const searchBtn = document.querySelector('.search-city-btn');
 const searchModal = document.getElementById('search-modal');
 const closeBtn = document.querySelector('.close');
 const inputCity = document.getElementById('input-name-city');
-const cityList = document.getElementById('city-list');
+const cityList = document.getElementById('city-list') || document.querySelector('ul');
 
 searchBtn.addEventListener('click', function() {
     searchModal.style.display = 'flex';
@@ -17,7 +17,7 @@ closeBtn.addEventListener('click', function() {
 
 autoGeoBtn.addEventListener('click', function() {
     if (!navigator.geolocation) {
-        alert('Геолокация не поддерживается');
+        alert('Геолокация не поддерживается вашим браузером');
         return;
     }
 
@@ -31,7 +31,7 @@ autoGeoBtn.addEventListener('click', function() {
         getWeather(lat, lon);
     }, function(err) {
         console.log(err);
-        alert('Не удалось определить координаты');
+        alert('Не удалось получить координаты');
     });
 });
 
@@ -176,15 +176,15 @@ async function getWeather(lat, lon) {
                 let numDate = dateObj.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' });
 
                 let itemDiv = document.createElement('div');
-                itemDiv.className = 'weather-day-item';
+                itemDiv.id = 'weather-day';
                 itemDiv.innerHTML = `
-                    <div class="day-week-box">
+                    <div id="day-week">
                         <span class="day">${dayTitle}</span>
                         <span class="number-day">${numDate}</span>
                     </div>
                     <img class="icon-weather" src="${getWeatherIcon(dCode)}" alt="weather">
                     <span class="wind">${wind} км/ч</span>
-                    <div class="day-degree-box">
+                    <div id="day-degree">
                         <span class="days-degree">${max}°</span>
                         <span class="night-degree">${min}°</span>
                     </div>
