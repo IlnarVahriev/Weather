@@ -7,106 +7,84 @@ const closeBtn = document.querySelector('.close');
 const inputCity = document.getElementById('input-name-city');
 const cityList = document.getElementById('city-list');
 
-autoGeoBtn.addEventListener('click', () => {
+searchBtn.addEventListener('click', function() {
+    searchModal.style.display = 'flex';
+});
+
+closeBtn.addEventListener('click', function() {
+    searchModal.style.display = 'none';
+});
+
+autoGeoBtn.addEventListener('click', function() {
     if (!navigator.geolocation) {
         alert('Геолокация не поддерживается вашим браузером');
         return;
     }
 
-    navigator.geolocation.getCurrentPosition(async (position) => {
-        const lat = position.coords.latitude;
-        const lon = position.coords.longitude;
+    navigator.geolocation.getCurrentPosition(function(pos) {
+        let lat = pos.coords.latitude;
+        let lon = pos.coords.longitude;
 
-        try {
-            // Обратное геокодирование через Photon (работает в РФ без VPN)
-            const response = await fetch(`https://photon.komoot.io/reverse?lat=${lat}&lon=${lon}&lang=ru`);
-            const data = await response.json();
+        nameCity.textContent = 'Мое местоположение';
+        countryName.textContent = '';
 
-            if (data && data.features && data.features.length > 0) {
-                const props = data.features[0].properties;
-                const cityName = props.name || props.city || props.town || 'Мое местоположение';
-                const country = props.country || '';
-
-                document.getElementById('name-city').textContent = cityName;
-                document.getElementById('country').textContent = country;
-            } else {
-                document.getElementById('name-city').textContent = 'Текущие координаты';
-                document.getElementById('country').textContent = '';
-            }
-
-            // Загружаем погоду по координатам
-            getWeatherByCoords(lat, lon);
-
-        } catch (error) {
-            console.error('Ошибка при определении местоположения:', error);
-            // Даже если не удастся узнать название города по коорд., погода всё равно загрузится!
-            getWeatherByCoords(lat, lon);
-            document.getElementById('name-city').textContent = 'Мои координаты';
-            document.getElementById('country').textContent = '';
-        }
-    }, (error) => {
-        console.error('Ошибка геолокации:', error);
-        alert('Не удалось получить доступ к вашему местоположению. Проверьте разрешения браузера.');
+        getWeather(lat, lon);
+    }, function(err) {
+        console.log(err);
+        alert('Не удалось получить координаты');
     });
 });
-searchBtn.addEventListener('click', () => {
-    searchModal.style.display = 'flex';
-});
 
-closeBtn.addEventListener('click', () => {
-    searchModal.style.display = 'none';
-});
+let timer;
 
-let debounceTimer;
+inputCity.addEventListener('input', function() {
+    clearTimeout(timer);
+    let text = inputCity.value.trim();
 
-inputCity.addEventListener('input', () => {
-    clearTimeout(debounceTimer);
-    const query = inputCity.value.trim();
-
-    if (query.length < 2) {
+    if (text.length < 2) {
         cityList.innerHTML = '';
         return;
     }
 
-    debounceTimer = setTimeout(async () => {
+    timer = setTimeout(async function() {
         try {
-            const response = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=5&lang=ru`);
-            const data = await response.json();
+            let res = await fetch('https://geocoding-api.open-meteo.com/v1/search?name=' + text + '&count=5&language=ru&format=json');
+            let data = await res.json();
 
             cityList.innerHTML = '';
 
-            if (data && data.features) {
-                data.features.forEach(item => {
-                    const props = item.properties;
-                    const coords = item.geometry.coordinates; // [lon, lat]
+            if (data.results) {
+                for (let i = 0; i < data.results.length; i++) {
+                    let item = data.results[i];
+                    let cityName = item.name;
+                    let country = item.country || '';
+                    let region = item.admin1 || '';
 
-                    const cityName = props.name || props.city || '';
-                    const region = props.state || props.county || '';
-                    const country = props.country || '';
+                    let extraText = country;
+                    if (region != '' && region != cityName) {
+                        if (country != '') {
+                            extraText = region + ', ' + country;
+                        } else {
+                            extraText = region;
+                        }
+                    }
 
-                    if (!cityName) return;
-
-                    const parts = [];
-                    if (region && region !== cityName) parts.push(region);
-                    if (country) parts.push(country);
-                    const subtitleText = parts.join(', ');
-
-                    const li = document.createElement('li');
+                    let li = document.createElement('li');
                     li.innerHTML = `
                         <button class="city-item-btn">
                             <div class="city-text-box">
                                 <span class="city-name">${cityName}</span>
-                                <span class="country-name">${subtitleText}</span>
+                                <span class="country-name">${extraText}</span>
                             </div>
                             <span class="arrow-icon">&gt;</span>
                         </button>
                     `;
 
-                    li.querySelector('.city-item-btn').addEventListener('click', () => {
+                    li.querySelector('button').addEventListener('click', function() {
                         nameCity.textContent = cityName;
-                        countryEl.textContent = country;
+                        countryName.textContent = country;
 
-                        getWeatherByCoords(coords[1], coords[0]);
+                        getWeather(item.latitude, item.longitude);
 
                         searchModal.style.display = 'none';
                         inputCity.value = '';
@@ -114,235 +92,156 @@ inputCity.addEventListener('input', () => {
                     });
 
                     cityList.appendChild(li);
-                });
+                }
             }
-        } catch (error) {
-            console.error('Ошибка при поиске города:', error);
+        } catch (err) {
+            console.log(err);
         }
     }, 400);
 });
 
-async function getWeatherByCoords(lat, lon) {
+async function getWeather(lat, lon) {
     try {
-        const response = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,apparent_temperature,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min,windspeed_10m_max&timezone=auto`);
-        const data = await response.json();
+        let res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=' + lat + '&longitude=' + lon + '&current=temperature_2m,apparent_temperature,weather_code&hourly=temperature_2m,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min,wind_speed_10m_max&timezone=auto');
+        let data = await res.json();
+        console.log(data);
 
-        if (data && data.current) {
-            const temp = Math.round(data.current.temperature_2m);
-            const apparentTemp = Math.round(data.current.apparent_temperature);
-            const weatherCode = data.current.weather_code;
+        if (data.current) {
+            let temp = Math.round(data.current.temperature_2m);
+            let feels = Math.round(data.current.apparent_temperature);
+            let code = data.current.weather_code;
 
             document.getElementById('degree').textContent = temp;
-            document.getElementById('temperature-feels').textContent = `Ощущается: ${apparentTemp}°`;
-            document.getElementById('weather-name').textContent = getWeatherDescription(weatherCode);
+            document.getElementById('temperature-feels').textContent = 'Ощущается: ' + feels + '°';
+            document.getElementById('weather-name').textContent = getWeatherDescription(code);
 
-            const weatherImg = document.querySelector('.weather-img');
-            if (weatherImg) {
-                weatherImg.src = getWeatherIcon(weatherCode);
+            let icon = document.querySelector('.weather-img');
+            if (icon) {
+                icon.src = getWeatherIcon(code);
             }
-            updateBackgroundTheme(weatherCode);
+
+            updateTheme(code);
         }
 
-        if (data && data.daily) {
-            const sevenDaysContainer = document.getElementById('weather-seven-days');
-            sevenDaysContainer.innerHTML = '';
+        let hourlyBox = document.getElementById('weather-hourly');
+        if (hourlyBox && data.hourly) {
+            hourlyBox.innerHTML = '';
+            let currentHour = new Date().getHours();
 
-            const dailyData = data.daily;
+            for (let i = currentHour; i < currentHour + 24; i++) {
+                if (i >= data.hourly.time.length) {
+                    break;
+                }
+
+                let d = new Date(data.hourly.time[i]);
+                let timeStr = d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+                let hTemp = Math.round(data.hourly.temperature_2m[i]);
+                let hCode = data.hourly.weather_code[i];
+
+                let card = document.createElement('div');
+                card.className = 'hourly-card';
+                card.innerHTML = `
+                    <span class="hourly-time">${timeStr}</span>
+                    <img class="hourly-icon" src="${getWeatherIcon(hCode)}" alt="weather">
+                    <span class="hourly-temp">${hTemp}°</span>
+                `;
+                hourlyBox.appendChild(card);
+            }
+        }
+
+        let dailyBox = document.getElementById('weather-seven-days');
+        if (dailyBox && data.daily) {
+            dailyBox.innerHTML = '';
 
             for (let i = 0; i < 7; i++) {
-                const dateStr = dailyData.time[i];
-                const maxTemp = Math.round(dailyData.temperature_2m_max[i]);
-                const minTemp = Math.round(dailyData.temperature_2m_min[i]);
-                const windSpeed = Math.round(dailyData.windspeed_10m_max[i]); // Теперь данные успешно считываются
-                const code = dailyData.weather_code[i];
+                let dateStr = data.daily.time[i];
+                let max = Math.round(data.daily.temperature_2m_max[i]);
+                let min = Math.round(data.daily.temperature_2m_min[i]);
+                let wind = Math.round(data.daily.wind_speed_10m_max[i]);
+                let dCode = data.daily.weather_code[i];
 
-                const formattedDate = formatDayLabel(dateStr, i);
+                let dateObj = new Date(dateStr);
+                let dayTitle = '';
 
-                const dayDiv = document.createElement('div');
-                dayDiv.id = 'weather-day';
-                dayDiv.innerHTML = `
-                    <div id="day-week">
-                        <span class="day">${formattedDate.dayName}</span>
-                        <span class="number-day">${formattedDate.dateNum}</span>
+                if (i == 0) {
+                    dayTitle = 'Сегодня';
+                } else if (i == 1) {
+                    dayTitle = 'Завтра';
+                } else {
+                    dayTitle = dateObj.toLocaleDateString('ru-RU', { weekday: 'long' });
+                }
+
+                let numDate = dateObj.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' });
+
+                let itemDiv = document.createElement('div');
+                itemDiv.className = 'weather-day-item';
+                itemDiv.innerHTML = `
+                    <div class="day-week-box">
+                        <span class="day">${dayTitle}</span>
+                        <span class="number-day">${numDate}</span>
                     </div>
-                    <img class="icon-weather" src="${getWeatherIcon(code)}" alt="weather">
-                    <span class="wind">${windSpeed} км/ч</span>
-                    <div id="day-degree">
-                        <span class="days-degree">${maxTemp}°</span>
-                        <span class="night-degree">${minTemp}°</span>
+                    <img class="icon-weather" src="${getWeatherIcon(dCode)}" alt="weather">
+                    <span class="wind">${wind} км/ч</span>
+                    <div class="day-degree-box">
+                        <span class="days-degree">${max}°</span>
+                        <span class="night-degree">${min}°</span>
                     </div>
                 `;
-
-                sevenDaysContainer.appendChild(dayDiv);
+                dailyBox.appendChild(itemDiv);
             }
         }
-    } catch (error) {
-        console.error('Ошибка при загрузке погоды:', error);
-    }
-}
 
-function formatDayLabel(dateString, index) {
-    const date = new Date(dateString);
-    
-    if (index === 0) {
-        return {
-            dayName: 'Сегодня',
-            dateNum: date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })
-        };
-    } else if (index === 1) {
-        return {
-            dayName: 'Завтра',
-            dateNum: date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })
-        };
-    } else {
-        return {
-            dayName: date.toLocaleDateString('ru-RU', { weekday: 'long' }),
-            dateNum: date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })
-        };
+    } catch (e) {
+        console.log(e);
+        alert('Ошибка при загрузке погоды');
     }
 }
 
 function getWeatherDescription(code) {
-    const descriptions = {
-        0: "Ясно",
-        1: "Малооблачно",
-        2: "Переменная облачность",
-        3: "Пасмурно",
-        45: "Туман",
-        51: "Слабая морось",
-        61: "Небольшой дождь",
-        63: "Дождь",
-        65: "Сильный дождь",
-        71: "Небольшой снег",
-        95: "Гроза"
-    };
-    return descriptions[code] || "Облачно";
+    if (code == 0) return 'Ясно';
+    if (code == 1) return 'Малооблачно';
+    if (code == 2) return 'Переменная облачность';
+    if (code == 3) return 'Пасмурно';
+    if (code == 45) return 'Туман';
+    if (code == 51) return 'Слабая морось';
+    if (code == 61) return 'Небольшой дождь';
+    if (code == 63) return 'Дождь';
+    if (code == 65) return 'Сильный дождь';
+    if (code == 71) return 'Небольшой снег';
+    if (code == 95) return 'Гроза';
+    return 'Облачно';
 }
 
 function getWeatherIcon(code) {
-    switch (code) {
-        case 0:
-            return './img/sun.svg';
-        case 1:
-        case 2:
-        case 3:
-            return './img/cloud.svg'; 
-        case 51:
-        case 61:
-        case 63:
-        case 65:
-            return './img/rain.svg'; 
-        case 71:
-        case 73:
-            return './img/snow.svg'; 
-        case 95:
-            return './img/storm.svg';
-        default:
-            return './img/sun.svg';
-    }
-}
-
-function updateBackgroundTheme(code) {
-    const body = document.body;
-    
-    body.className = '';
-
-    if (code === 0) {
-        body.classList.add('sunny');
+    if (code == 0) {
+        return './img/sun.svg';
     } else if (code >= 1 && code <= 3) {
-        body.classList.add('cloudy');
-    } else if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82)) {
-        body.classList.add('rainy');
-    } else if ((code >= 71 && code <= 77) || (code >= 85 && code <= 86)) {
-        body.classList.add('snowy');
+        return './img/cloud.svg';
+    } else if (code >= 51 && code <= 67) {
+        return './img/rain.svg';
+    } else if (code >= 71 && code <= 77) {
+        return './img/snow.svg';
     } else if (code >= 95) {
-        body.classList.add('stormy');
+        return './img/storm.svg';
     } else {
-        body.classList.add('cloudy'); 
+        return './img/sun.svg';
     }
 }
 
-async function getWeatherByCoords(lat, lon) {
-    try {
-        const response = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,apparent_temperature,weather_code&hourly=temperature_2m,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min,windspeed_10m_max&timezone=auto`);
-        const data = await response.json();
+function updateTheme(code) {
+    document.body.className = '';
 
-        if (data && data.current) {
-            const temp = Math.round(data.current.temperature_2m);
-            const apparentTemp = Math.round(data.current.apparent_temperature);
-            const weatherCode = data.current.weather_code;
-
-            document.getElementById('degree').textContent = temp;
-            document.getElementById('temperature-feels').textContent = `Ощущается: ${apparentTemp}°`;
-            document.getElementById('weather-name').textContent = getWeatherDescription(weatherCode);
-
-            const weatherImg = document.querySelector('.weather-img');
-            if (weatherImg) {
-                weatherImg.src = getWeatherIcon(weatherCode);
-            }
-
-            updateBackgroundTheme(weatherCode);
-        }
-
-        if (data && data.hourly) {
-            const hourlyContainer = document.getElementById('weather-hourly');
-            hourlyContainer.innerHTML = '';
-
-            const hourlyData = data.hourly;
-            
-            const currentHourIndex = new Date().getHours();
-
-            for (let i = currentHourIndex; i < currentHourIndex + 24 && i < hourlyData.time.length; i++) {
-                const timeStr = new Date(hourlyData.time[i]).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
-                const temp = Math.round(hourlyData.temperature_2m[i]);
-                const code = hourlyData.weather_code[i];
-
-                const card = document.createElement('div');
-                card.className = 'hourly-card';
-                card.innerHTML = `
-                    <span class="hourly-time">${timeStr}</span>
-                    <img class="hourly-icon" src="${getWeatherIcon(code)}" alt="weather">
-                    <span class="hourly-temp">${temp}°</span>
-                `;
-
-                hourlyContainer.appendChild(card);
-            }
-        }
-
-        if (data && data.daily) {
-            const sevenDaysContainer = document.getElementById('weather-seven-days');
-            sevenDaysContainer.innerHTML = '';
-
-            const dailyData = data.daily;
-
-            for (let i = 0; i < 7; i++) {
-                const dateStr = dailyData.time[i];
-                const maxTemp = Math.round(dailyData.temperature_2m_max[i]);
-                const minTemp = Math.round(dailyData.temperature_2m_min[i]);
-                const windSpeed = Math.round(dailyData.windspeed_10m_max[i]);
-                const code = dailyData.weather_code[i];
-
-                const formattedDate = formatDayLabel(dateStr, i);
-
-                const dayDiv = document.createElement('div');
-                dayDiv.id = 'weather-day';
-                dayDiv.innerHTML = `
-                    <div id="day-week">
-                        <span class="day">${formattedDate.dayName}</span>
-                        <span class="number-day">${formattedDate.dateNum}</span>
-                    </div>
-                    <img class="icon-weather" src="${getWeatherIcon(code)}" alt="weather">
-                    <span class="wind">${windSpeed} км/ч</span>
-                    <div id="day-degree">
-                        <span class="days-degree">${maxTemp}°</span>
-                        <span class="night-degree">${minTemp}°</span>
-                    </div>
-                `;
-
-                sevenDaysContainer.appendChild(dayDiv);
-            }
-        }
-    } catch (error) {
-        console.error('Ошибка при загрузке погоды:', error);
+    if (code == 0) {
+        document.body.classList.add('sunny');
+    } else if (code >= 1 && code <= 3) {
+        document.body.classList.add('cloudy');
+    } else if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82)) {
+        document.body.classList.add('rainy');
+    } else if ((code >= 71 && code <= 77) || (code >= 85 && code <= 86)) {
+        document.body.classList.add('snowy');
+    } else if (code >= 95) {
+        document.body.classList.add('stormy');
+    } else {
+        document.body.classList.add('cloudy');
     }
 }
