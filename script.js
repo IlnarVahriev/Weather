@@ -256,11 +256,9 @@ function updateBackgroundTheme(code) {
 
 async function getWeatherByCoords(lat, lon) {
     try {
-        // Добавили hourly в параметры запроса
         const response = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,apparent_temperature,weather_code&hourly=temperature_2m,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min,windspeed_10m_max&timezone=auto`);
         const data = await response.json();
 
-        // 1. Текущая погода
         if (data && data.current) {
             const temp = Math.round(data.current.temperature_2m);
             const apparentTemp = Math.round(data.current.apparent_temperature);
@@ -278,17 +276,14 @@ async function getWeatherByCoords(lat, lon) {
             updateBackgroundTheme(weatherCode);
         }
 
-        // 2. Почасовой прогноз (на следующие 24 часа)
         if (data && data.hourly) {
             const hourlyContainer = document.getElementById('weather-hourly');
             hourlyContainer.innerHTML = '';
 
             const hourlyData = data.hourly;
             
-            // Получаем текущий час, чтобы начать прогноз с текущего момента
             const currentHourIndex = new Date().getHours();
 
-            // Выводим следующие 24 часа
             for (let i = currentHourIndex; i < currentHourIndex + 24 && i < hourlyData.time.length; i++) {
                 const timeStr = new Date(hourlyData.time[i]).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
                 const temp = Math.round(hourlyData.temperature_2m[i]);
@@ -306,7 +301,6 @@ async function getWeatherByCoords(lat, lon) {
             }
         }
 
-        // 3. Прогноз на 7 дней (ваш текущий код)
         if (data && data.daily) {
             const sevenDaysContainer = document.getElementById('weather-seven-days');
             sevenDaysContainer.innerHTML = '';
