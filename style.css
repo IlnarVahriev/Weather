@@ -1,0 +1,412 @@
+@font-face {
+    font-family: 'Inter';
+    src: url('font/Inter-VariableFont_opsz,wght.ttf') format('ttf');
+}
+
+body {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-image: linear-gradient(to right, #2A799B 0%, #20ACE9 34%, #17A1DF 39%, #075272 100%);
+    min-height: 1080px;
+    transition: background-image 0.5s ease;
+}
+
+body.sunny {
+    background-image: linear-gradient(to right, #2A799B 0%, #20ACE9 34%, #17A1DF 39%, #075272 100%);
+}
+
+body.cloudy {
+    background-image: linear-gradient(to right, #4A6572 0%, #344955 50%, #23272A 100%);
+}
+
+body.rainy {
+    background-image: linear-gradient(to right, #1F4068 0%, #162447 50%, #1B1A17 100%);
+}
+
+body.snowy {
+    background-image: linear-gradient(to right, #598392 0%, #37474F 50%, #1B262C 100%);
+}
+
+body.stormy {
+    background-image: linear-gradient(to right, #2C3E50 0%, #000000 100%);
+}
+
+/*HEADER HEADER*/
+
+#header {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    margin-top: 31px;
+}
+
+#location {
+    max-width: 100%;
+    display: flex;
+    flex-direction: row;
+    gap: 9px;
+}
+
+.auto-geo-btn {
+    opacity: 1;
+    border-radius: 32px;
+    width: 76.4px;
+    height: 76.4px;
+    background: rgba(255, 255, 255, 0.1); 
+    outline: none;
+    border: 1.86px solid #58A5C3;
+    cursor: pointer;
+}
+
+.auto-geo-btn img {
+    width: 29.8px;
+    height: 37.3px;
+    margin-top: 3px;
+}
+
+#city {
+    max-width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: start;
+    justify-content: center;
+    gap: 0.2px;
+}
+
+#name-city {
+    font-family: Inter;
+    font-size: 30px;
+    font-weight: 700;
+    color: white;
+    margin: 0;
+    max-width: 850px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+}
+
+#country {
+    font-family: Inter;
+    font-size: 23px;
+    font-weight: 700;
+    color: white;
+    opacity: 0.60;
+    margin: 0;
+}
+
+#header-btn {
+    display: flex;
+    flex-direction: row;
+    gap: 22px;
+}
+
+.search-city-btn {
+    opacity: 1;
+    border-radius: 21.5px;
+    width: 76.4px;
+    height: 76.4px;
+    background: rgba(255, 255, 255, 0.1); 
+    outline: none;
+    border: 1.86px solid #58A5C3;
+    cursor: pointer;
+}
+
+/*MAIN MAIN*/
+
+main {
+    max-width: 100%;
+    width: 1044px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 41px;
+}
+
+#weather-today {
+    max-width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+}
+
+#degree {
+    font-family: Inter;
+    font-size: 134px;
+    font-weight: bold;
+    margin: 0;
+    text-align: start;
+    color: white;
+}
+
+#weather-name {
+    font-family: Inter;
+    font-size: 50px;
+    font-weight: bold;
+    color: white;
+    text-align: start;
+    margin: 0;
+}
+
+#feels {
+    display: flex;
+    flex-direction: row;
+    gap: 6px;
+    align-items: center;
+}
+
+#feels img {
+    width: 26px;
+    height: 26px;
+}
+
+#temperature-feels {
+    font-family: Inter;
+    font-weight: 700;
+    font-size: 22px;
+    color: #9BC6D9;
+    margin-top: 16px;
+}
+
+.weather-img {
+    width: 210px;
+    height: 210px;
+}
+
+/*Прогноз по часам Прогноз по часам*/
+
+#weather-hourly {
+    max-width: 100%;
+    width: 1136px;
+    height: 160px;
+    background-color: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgb(22, 146, 200, 0.4);
+    border-radius: 30px;
+    margin-top: 25px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 0 24px;
+    overflow-x: auto;
+    white-space: nowrap;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.3) rgba(255, 255, 255, 0.05);
+}
+
+.hourly-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    min-width: 70px;
+    height: 120px;
+    flex-shrink: 0;
+}
+
+.hourly-time {
+    font-family: Inter;
+    font-size: 16px;
+    font-weight: 500;
+    color: #B4B9BD;
+}
+
+.hourly-icon {
+    width: 40px;
+    height: 40px;
+}
+
+.hourly-temp {
+    font-family: Inter;
+    font-size: 22px;
+    font-weight: bold;
+    color: white;
+}
+
+/*Прогноз на неделю Прогноз на неделю*/
+
+#weather-seven-days {
+    max-width: 100%;
+    max-height: 100%;
+    width: 1136px;
+    height: auto;
+    background-color: rgba(144, 144, 144, 0.1);
+    border: 1px solid rgb(22, 146, 200, 0.4);
+    border-radius: 43px;
+    margin-bottom: 50px;
+    margin-top: 37px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    align-items: center;
+    padding: 28px;
+    gap: 25px;
+}
+
+#weather-day {
+    max-width: 100%;
+    width: 1020px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#day-week {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.day {
+    font-family: Inter;
+    font-size: 23px;
+    font-weight: bold;
+    color: white;
+    text-transform: capitalize;
+}
+
+.number-day {
+    font-family: Inter;
+    font-size: 17px;
+    font-weight: 500;
+    color: #B4B9BD;
+}
+
+.icon-weather {
+    width: 56px;
+    height: 56px;
+}
+
+.wind {
+    font-family: Inter;
+    font-size: 16px;
+    font-weight: bold;
+    color: white;
+}
+
+#day-degree {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 24px;
+}
+
+.days-degree {
+    font-family: Inter;
+    font-size: 34px;
+    font-weight: bold;
+    color: white;
+}
+
+.night-degree {
+    font-family: Inter;
+    font-size: 24px;
+    font-weight: 500;
+    color: #A9ADB0;
+}
+
+#search-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: #20201E;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+}
+
+#modal-header-content {
+    max-width: 100%;
+    display: flex;
+    flex-direction: row;
+    gap: 32px;
+    margin-top: 40px;
+}
+
+#input-name-city {
+    width: 750px;
+    background-color: #2E2F31;
+    border-radius: 36px;
+    outline: none;
+    border: 3px solid #214A89;
+    font-family: Inter;
+    font-size: 33px;
+    font-weight: 700;
+    padding: 22px;
+    color: white;
+}
+
+.close {
+    width: 82px;
+    height: 82px;
+    background-color: #1E1E1E;
+    outline: none;
+    border: 1px solid #4B4B4B;
+    border-radius: 40px;
+    padding: 29px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+ul {
+    max-width: 100%;
+    max-height: 1080px;
+    overflow-y: auto;
+    padding-right: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 18px;
+    list-style: none;
+}
+
+.city-item-btn {
+    background-color: #20211C;
+    width: 850px;
+    outline: none;
+    border: 1px solid #4B4B4B;
+    border-radius: 35px;
+    padding: 19px 38px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+}
+
+.city-text-box {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.city-name {
+    font-family: Inter;
+    font-size: 26px;
+    font-weight: 700;
+    color: white;
+    text-align: start;
+}
+
+.country-name {
+    font-family: Inter;
+    font-size: 23px;
+    font-weight: 700;
+    color: #A6A6A4;
+    text-align: start;
+}
+
+.arrow-icon {
+    font-family: Inter;
+    font-size: 32px;
+    font-weight: 400;
+    color: #808080;
+}

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <header id="header">
+        <section id="location">
+            <button class="auto-geo-btn">
+                <img src="./img/location.svg" alt="location" width="30px" height="37px">
+            </button>
+            <div id="city">
+                <h1 id="name-city">Город</h1>
+                <h2 id="country">Страна</h2>
+            </div>
+        </section>
+        <section id="header-btn">
+            <button class="search-city-btn">
+                <img src="./img/search.svg" alt="search">
+            </button>
+            
+        </section>
+    </header>
+
+    <main>
+        <section id="weater-today">
+            <h1 id="degree">20</h1>
+            <h2 id="weather-name">Ясно</h2>
+            <div id="feels">
+                <img src="./img/temperature.svg" alt="temperature">
+                <p id="temperature-feels">Ощущается: 10°</p>
+            </div>
+        </section>
+        <img class="weather-img" src="./img/sun.svg" alt="sun">
+    </main>
+
+    <div id="weather-hourly">
+
+    </div>
+
+    <div id="weather-seven-days">
+        <div id="weather-day">
+            <div id="day-week">
+    
+            </div>
+        </div>
+    </div>
+
+    <div id="search-modal" class="modal">
+        <div id="modal-header-content">
+            <input type="text" id="input-name-city" placeholder="Введите название..." autocomplete="off">
+            <button class="close">
+                <img src="./img/close.svg" alt="close">
+            </button>
+        </div>
+        <ul id="city-list">
+        </ul>
+    </div>
+</body>
+<script src="script.js"></script>
+</html>
