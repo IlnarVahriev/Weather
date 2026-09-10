@@ -7,40 +7,48 @@ const closeBtn = document.querySelector('.close');
 const inputCity = document.getElementById('input-name-city');
 const cityList = document.getElementById('city-list');
 
-function getAutoLocation () {
+autoGeoBtn.addEventListener('click', () => {
     if (!navigator.geolocation) {
-        nameCity.textContent = "Геолокация не поддерживается вашим устройством";
+        alert('Геолокация не поддерживается вашим браузером');
         return;
     }
-
-    nameCity.textContent = "Определение координат..."
 
     navigator.geolocation.getCurrentPosition(async (position) => {
         const lat = position.coords.latitude;
         const lon = position.coords.longitude;
 
-        nameCity.textContent = "Определение названия...";
-
         try {
-            const response = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=5&lang=ru`);
+            // Обратное геокодирование через Photon (работает в РФ без VPN)
+            const response = await fetch(`https://photon.komoot.io/reverse?lat=${lat}&lon=${lon}&lang=ru`);
             const data = await response.json();
 
-            if (data && data.address) {
+            if (data && data.features && data.features.length > 0) {
+                const props = data.features[0].properties;
+                const cityName = props.name || props.city || props.town || 'Мое местоположение';
+                const country = props.country || '';
 
-                nameCity.textContent = data.address.city || data.address.town || data.address.village || "Неизвестно";
-                country.textContent = data.address.country || "";
+                document.getElementById('name-city').textContent = cityName;
+                document.getElementById('country').textContent = country;
             } else {
-                nameCity.textContent = `Координаты определены: ${lat.toFixed(4)}, ${lon.toFixed(4)}`;
+                document.getElementById('name-city').textContent = 'Текущие координаты';
+                document.getElementById('country').textContent = '';
             }
 
+            // Загружаем погоду по координатам
             getWeatherByCoords(lat, lon);
-        } catch (error) {
-            nameCity.textContent = `Определены координаты: ${lat.toFixed(4)}, ${lon.toFixed(4)}, но не удалось получить название.`;
-        }
-    })
-};
 
-autoGeoBtn.addEventListener('click', getAutoLocation);
+        } catch (error) {
+            console.error('Ошибка при определении местоположения:', error);
+            // Даже если не удастся узнать название города по коорд., погода всё равно загрузится!
+            getWeatherByCoords(lat, lon);
+            document.getElementById('name-city').textContent = 'Мои координаты';
+            document.getElementById('country').textContent = '';
+        }
+    }, (error) => {
+        console.error('Ошибка геолокации:', error);
+        alert('Не удалось получить доступ к вашему местоположению. Проверьте разрешения браузера.');
+    });
+});
 searchBtn.addEventListener('click', () => {
     searchModal.style.display = 'flex';
 });
@@ -49,69 +57,69 @@ closeBtn.addEventListener('click', () => {
     searchModal.style.display = 'none';
 });
 
-let searchTimer;
+let debounceTimer;
 
-inputCity.addEventListener('input', (e) => {
-    const query = e.target.value.trim();
-    
-    clearTimeout(searchTimer);
+inputCity.addEventListener('input', () => {
+    clearTimeout(debounceTimer);
+    const query = inputCity.value.trim();
 
     if (query.length < 2) {
         cityList.innerHTML = '';
         return;
     }
 
-    searchTimer = setTimeout(async () => {
+    debounceTimer = setTimeout(async () => {
         try {
             const response = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=5&lang=ru`);
             const data = await response.json();
 
             cityList.innerHTML = '';
 
-            data.forEach(item => {
-                const addr = item.address || {};
-                
-                const cityName = addr.city || addr.town || addr.village || addr.county || item.display_name.split(',')[0];
-                
-                const district = addr.city_district || addr.suburb || addr.district || '';
-                const region = addr.state || addr.province || addr.region || '';
-                const country = addr.country || '';
+            if (data && data.features) {
+                data.features.forEach(item => {
+                    const props = item.properties;
+                    const coords = item.geometry.coordinates; // [lon, lat]
 
-                const parts = [];
-                if (district) parts.push(district);
-                if (region && region !== district) parts.push(region);
-                if (country) parts.push(country);
-                
-                const subtitleText = parts.join(', ');
+                    const cityName = props.name || props.city || '';
+                    const region = props.state || props.county || '';
+                    const country = props.country || '';
 
-                const li = document.createElement('li');
-                li.innerHTML = `
-                    <button class="city-item-btn">
-                        <div class="city-text-box">
-                            <span class="city-name">${cityName}</span>
-                            <span class="country-name">${subtitleText}</span>
-                        </div>
-                        <span class="arrow-icon">&gt;</span>
-                    </button>
-                `;
+                    if (!cityName) return;
 
-                li.querySelector('.city-item-btn').addEventListener('click', () => {
-                    nameCity.textContent = cityName;
-                    countryName.textContent = country;
+                    const parts = [];
+                    if (region && region !== cityName) parts.push(region);
+                    if (country) parts.push(country);
+                    const subtitleText = parts.join(', ');
 
-                    getWeatherByCoords(item.lat, item.lon);
+                    const li = document.createElement('li');
+                    li.innerHTML = `
+                        <button class="city-item-btn">
+                            <div class="city-text-box">
+                                <span class="city-name">${cityName}</span>
+                                <span class="country-name">${subtitleText}</span>
+                            </div>
+                            <span class="arrow-icon">&gt;</span>
+                        </button>
+                    `;
 
-                    searchModal.style.display = 'none';
-                    inputCity.value = '';
-                    cityList.innerHTML = '';
+                    li.querySelector('.city-item-btn').addEventListener('click', () => {
+                        nameCity.textContent = cityName;
+                        countryEl.textContent = country;
+
+                        getWeatherByCoords(coords[1], coords[0]);
+
+                        searchModal.style.display = 'none';
+                        inputCity.value = '';
+                        cityList.innerHTML = '';
+                    });
+
+                    cityList.appendChild(li);
                 });
-
-                cityList.appendChild(li);
-            });
+            }
         } catch (error) {
-            console.error('Ошибка при поиске:', error);
+            console.error('Ошибка при поиске города:', error);
         }
-    }, 300);
+    }, 400);
 });
 
 async function getWeatherByCoords(lat, lon) {
